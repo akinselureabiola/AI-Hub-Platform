@@ -298,7 +298,7 @@ if "generated" not in st.session_state:
 # USAGE LIMIT SYSTEM
 # =========================
 
-DAILY_LIMIT = 3
+DAILY_LIMIT = 9999
 
 def get_usage_file(username):
 
