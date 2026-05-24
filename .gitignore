@@ -1,3 +1,4 @@
+```gitignore
 # Environment
 .env
 
@@ -7,11 +8,19 @@ venv/
 
 # Python Cache
 __pycache__/
+*.pyc
 
 # macOS
 .DS_Store
 
-# Generated Files
+# Streamlit Secrets
+.streamlit/secrets.toml
+
+# VS Code
+.vscode/
+
+# Generated App Data
+data/
 outputs/
 analysis/
 
@@ -19,8 +28,5 @@ analysis/
 *.docx
 *.pdf
 
-# Streamlit Secrets
-.streamlit/secrets.toml
-
-# VS Code
-.vscode/
+# Logs
+*.log

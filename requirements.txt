@@ -1,3 +1,4 @@
+```txt
 streamlit
 openai
 python-dotenv
@@ -8,3 +9,6 @@ streamlit-authenticator
 bcrypt
 PyJWT
 PyYAML
+cryptography
+extra-streamlit-components
+captcha

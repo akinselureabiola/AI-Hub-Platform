@@ -37,30 +37,20 @@ load_dotenv()
 # CREATE DATA FOLDERS
 # =========================
 
-Path("data/usage").mkdir(
-    parents=True,
-    exist_ok=True
-)
+folders = [
+    "data/usage",
+    "data/feedback",
+    "data/history",
+    "outputs",
+    "analysis"
+]
 
-Path("data/feedback").mkdir(
-    parents=True,
-    exist_ok=True
-)
+for folder in folders:
 
-Path("data/history").mkdir(
-    parents=True,
-    exist_ok=True
-)
-
-Path("outputs").mkdir(
-    parents=True,
-    exist_ok=True
-)
-
-Path("analysis").mkdir(
-    parents=True,
-    exist_ok=True
-)
+    Path(folder).mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
 # =========================
 # OPENAI CLIENT
@@ -189,6 +179,13 @@ with signup_tab:
         "Create Account"
     ):
 
+        existing_emails = [
+
+            user_data["email"]
+
+            for user_data in config["credentials"]["usernames"].values()
+        ]
+
         if not signup_name:
 
             st.error(
@@ -220,6 +217,12 @@ with signup_tab:
 
             st.error(
                 "Username already exists."
+            )
+
+        elif signup_email in existing_emails:
+
+            st.error(
+                "Email already exists."
             )
 
         elif (
@@ -353,7 +356,7 @@ def increment_user_usage(username):
         )
 
 # =========================
-# GENERATION HISTORY
+# SAVE HISTORY
 # =========================
 
 def save_generation_history(
@@ -391,6 +394,42 @@ def save_generation_history(
         )
 
 # =========================
+# LOAD USER HISTORY
+# =========================
+
+def load_user_history(username):
+
+    history_files = sorted(
+        os.listdir("data/history"),
+        reverse=True
+    )
+
+    user_history = []
+
+    for file in history_files:
+
+        if file.startswith(username):
+
+            file_path = (
+                f"data/history/{file}"
+            )
+
+            with open(
+                file_path,
+                "r"
+            ) as history_file:
+
+                data = json.load(
+                    history_file
+                )
+
+                user_history.append(
+                    data
+                )
+
+    return user_history
+
+# =========================
 # FEEDBACK SYSTEM
 # =========================
 
@@ -426,6 +465,35 @@ def save_feedback(
             indent=2
         )
 
+def load_feedback_data():
+
+    feedback_files = os.listdir(
+        "data/feedback"
+    )
+
+    feedback_data = []
+
+    for file in feedback_files:
+
+        file_path = (
+            f"data/feedback/{file}"
+        )
+
+        with open(
+            file_path,
+            "r"
+        ) as feedback_file:
+
+            data = json.load(
+                feedback_file
+            )
+
+            feedback_data.append(
+                data
+            )
+
+    return feedback_data
+
 # =========================
 # ADMIN ANALYTICS
 # =========================
@@ -459,6 +527,20 @@ def get_total_users():
 # =========================
 # HELPERS
 # =========================
+
+def clean_ats_score(score_text):
+
+    try:
+
+        digits = "".join(
+            filter(str.isdigit, score_text)
+        )
+
+        return int(digits)
+
+    except:
+
+        return 0
 
 def extract_text_from_pdf(file):
 
@@ -565,8 +647,9 @@ current_usage = get_user_usage(
     username
 )
 
-remaining_usage = (
-    DAILY_LIMIT - current_usage
+remaining_usage = max(
+    DAILY_LIMIT - current_usage,
+    0
 )
 
 with st.sidebar:
@@ -586,6 +669,7 @@ with st.sidebar:
         - Recruiter Optimization
         - Feedback Tracking
         - Usage Tracking
+        - Generation History
         """
     )
 
@@ -616,6 +700,20 @@ uploaded_resume = st.file_uploader(
         "txt"
     ]
 )
+
+if uploaded_resume:
+
+    file_size_mb = (
+        uploaded_resume.size / 1024 / 1024
+    )
+
+    if file_size_mb > 5:
+
+        st.error(
+            "Resume file too large. Maximum file size is 5MB."
+        )
+
+        st.stop()
 
 job_description = st.text_area(
     "Paste Job Description",
@@ -684,15 +782,17 @@ if generate_clicked:
 
             st.stop()
 
-        with st.spinner(
-            "Generating recruiter-ready documents..."
-        ):
+        try:
 
-            timestamp = datetime.now().strftime(
-                "%Y%m%d_%H%M%S"
-            )
+            with st.spinner(
+                "Generating recruiter-ready documents..."
+            ):
 
-            ats_prompt = f"""
+                timestamp = datetime.now().strftime(
+                    "%Y%m%d_%H%M%S"
+                )
+
+                ats_prompt = f"""
 RESUME:
 
 {resume_text}
@@ -702,58 +802,58 @@ JOB DESCRIPTION:
 {job_description}
 """
 
-            ats_response = client.chat.completions.create(
-                model="gpt-4.1-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": ATS_ANALYSIS_PROMPT
-                    },
-                    {
-                        "role": "user",
-                        "content": ats_prompt
-                    }
-                ],
-                temperature=0.4
-            )
+                ats_response = client.chat.completions.create(
+                    model="gpt-4.1-mini",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": ATS_ANALYSIS_PROMPT
+                        },
+                        {
+                            "role": "user",
+                            "content": ats_prompt
+                        }
+                    ],
+                    temperature=0.4
+                )
 
-            ats_output = (
-                ats_response
-                .choices[0]
-                .message
-                .content
-            )
+                ats_output = (
+                    ats_response
+                    .choices[0]
+                    .message
+                    .content
+                )
 
-            ats_score = extract_section(
-                ats_output,
-                "===ATS_SCORE===",
-                "===MATCHING_KEYWORDS==="
-            )
+                ats_score = extract_section(
+                    ats_output,
+                    "===ATS_SCORE===",
+                    "===MATCHING_KEYWORDS==="
+                )
 
-            matching_keywords = extract_section(
-                ats_output,
-                "===MATCHING_KEYWORDS===",
-                "===MISSING_KEYWORDS==="
-            )
+                matching_keywords = extract_section(
+                    ats_output,
+                    "===MATCHING_KEYWORDS===",
+                    "===MISSING_KEYWORDS==="
+                )
 
-            missing_keywords = extract_section(
-                ats_output,
-                "===MISSING_KEYWORDS===",
-                "===JOB_FIT_ANALYSIS==="
-            )
+                missing_keywords = extract_section(
+                    ats_output,
+                    "===MISSING_KEYWORDS===",
+                    "===JOB_FIT_ANALYSIS==="
+                )
 
-            job_fit_analysis = extract_section(
-                ats_output,
-                "===JOB_FIT_ANALYSIS===",
-                "===IMPROVEMENT_SUGGESTIONS==="
-            )
+                job_fit_analysis = extract_section(
+                    ats_output,
+                    "===JOB_FIT_ANALYSIS===",
+                    "===IMPROVEMENT_SUGGESTIONS==="
+                )
 
-            improvement_suggestions = extract_section(
-                ats_output,
-                "===IMPROVEMENT_SUGGESTIONS==="
-            )
+                improvement_suggestions = extract_section(
+                    ats_output,
+                    "===IMPROVEMENT_SUGGESTIONS==="
+                )
 
-            resume_prompt = f"""
+                resume_prompt = f"""
 MASTER RESUME:
 
 {resume_text}
@@ -763,34 +863,34 @@ JOB DESCRIPTION:
 {job_description}
 """
 
-            resume_response = client.chat.completions.create(
-                model="gpt-4.1-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": RESUME_GENERATION_PROMPT
-                    },
-                    {
-                        "role": "user",
-                        "content": resume_prompt
-                    }
-                ],
-                temperature=0.7
-            )
-
-            tailored_resume = (
-                resume_response
-                .choices[0]
-                .message
-                .content
-                .replace(
-                    "Final Resume",
-                    ""
+                resume_response = client.chat.completions.create(
+                    model="gpt-4.1-mini",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": RESUME_GENERATION_PROMPT
+                        },
+                        {
+                            "role": "user",
+                            "content": resume_prompt
+                        }
+                    ],
+                    temperature=0.7
                 )
-                .strip()
-            )
 
-            cover_prompt = f"""
+                tailored_resume = (
+                    resume_response
+                    .choices[0]
+                    .message
+                    .content
+                    .replace(
+                        "Final Resume",
+                        ""
+                    )
+                    .strip()
+                )
+
+                cover_prompt = f"""
 MASTER RESUME:
 
 {resume_text}
@@ -800,38 +900,38 @@ JOB DESCRIPTION:
 {job_description}
 """
 
-            cover_response = client.chat.completions.create(
-                model="gpt-4.1-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": COVER_LETTER_PROMPT
-                    },
-                    {
-                        "role": "user",
-                        "content": cover_prompt
-                    }
-                ],
-                temperature=0.7
-            )
-
-            tailored_cover_letter = (
-                cover_response
-                .choices[0]
-                .message
-                .content
-                .replace(
-                    "Final Cover Letter",
-                    ""
+                cover_response = client.chat.completions.create(
+                    model="gpt-4.1-mini",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": COVER_LETTER_PROMPT
+                        },
+                        {
+                            "role": "user",
+                            "content": cover_prompt
+                        }
+                    ],
+                    temperature=0.7
                 )
-                .strip()
+
+                tailored_cover_letter = (
+                    cover_response
+                    .choices[0]
+                    .message
+                    .content
+                    .replace(
+                        "Final Cover Letter",
+                        ""
+                    )
+                    .strip()
+                )
+
+            analysis_filename = (
+                f"analysis/ats_analysis_{timestamp}.txt"
             )
 
-        analysis_filename = (
-            f"analysis/ats_analysis_{timestamp}.txt"
-        )
-
-        analysis_content = f"""
+            analysis_content = f"""
 ATS MATCH ANALYSIS
 
 Estimated ATS Match Score:
@@ -850,77 +950,85 @@ RESUME IMPROVEMENT SUGGESTIONS:
 {improvement_suggestions}
 """
 
-        with open(
-            analysis_filename,
-            "w",
-            encoding="utf-8"
-        ) as file:
+            with open(
+                analysis_filename,
+                "w",
+                encoding="utf-8"
+            ) as file:
 
-            file.write(
-                analysis_content
+                file.write(
+                    analysis_content
+                )
+
+            resume_filename = (
+                f"outputs/resume_{timestamp}.docx"
             )
 
-        resume_filename = (
-            f"outputs/resume_{timestamp}.docx"
-        )
+            cover_letter_filename = (
+                f"outputs/cover_letter_{timestamp}.docx"
+            )
 
-        cover_letter_filename = (
-            f"outputs/cover_letter_{timestamp}.docx"
-        )
+            resume_path = generate_resume_docx(
+                tailored_resume,
+                resume_filename
+            )
 
-        resume_path = generate_resume_docx(
-            tailored_resume,
-            resume_filename
-        )
+            cover_letter_path = generate_cover_letter_docx(
+                tailored_cover_letter,
+                cover_letter_filename
+            )
 
-        cover_letter_path = generate_cover_letter_docx(
-            tailored_cover_letter,
-            cover_letter_filename
-        )
+            increment_user_usage(
+                username
+            )
 
-        increment_user_usage(
-            username
-        )
+            save_generation_history(
+                username,
+                ats_score,
+                job_description
+            )
 
-        save_generation_history(
-            username,
-            ats_score,
-            job_description
-        )
+            st.session_state.tailored_resume = tailored_resume
 
-        st.session_state.tailored_resume = tailored_resume
+            st.session_state.tailored_cover_letter = (
+                tailored_cover_letter
+            )
 
-        st.session_state.tailored_cover_letter = (
-            tailored_cover_letter
-        )
+            st.session_state.resume_path = resume_path
 
-        st.session_state.resume_path = resume_path
+            st.session_state.cover_letter_path = (
+                cover_letter_path
+            )
 
-        st.session_state.cover_letter_path = (
-            cover_letter_path
-        )
+            st.session_state.timestamp = timestamp
 
-        st.session_state.timestamp = timestamp
+            st.session_state.ats_score = ats_score
 
-        st.session_state.ats_score = ats_score
+            st.session_state.matching_keywords = (
+                matching_keywords
+            )
 
-        st.session_state.matching_keywords = (
-            matching_keywords
-        )
+            st.session_state.missing_keywords = (
+                missing_keywords
+            )
 
-        st.session_state.missing_keywords = (
-            missing_keywords
-        )
+            st.session_state.job_fit_analysis = (
+                job_fit_analysis
+            )
 
-        st.session_state.job_fit_analysis = (
-            job_fit_analysis
-        )
+            st.session_state.improvement_suggestions = (
+                improvement_suggestions
+            )
 
-        st.session_state.improvement_suggestions = (
-            improvement_suggestions
-        )
+            st.session_state.generated = True
 
-        st.session_state.generated = True
+        except Exception as error:
+
+            st.error(
+                f"Generation failed: {error}"
+            )
+
+            st.stop()
 
 # =========================
 # DISPLAY RESULTS
@@ -940,9 +1048,17 @@ if st.session_state.generated:
 
     with col1:
 
+        clean_score = clean_ats_score(
+            st.session_state.ats_score
+        )
+
         st.metric(
             "Estimated ATS Match Score",
-            st.session_state.ats_score
+            f"{clean_score}%"
+        )
+
+        st.progress(
+            clean_score / 100
         )
 
         st.markdown(
@@ -1074,10 +1190,42 @@ if st.session_state.generated:
         )
 
 # =========================
+# USER HISTORY
+# =========================
+
+st.divider()
+
+st.subheader(
+    "My Generation History"
+)
+
+history = load_user_history(
+    username
+)
+
+if len(history) == 0:
+
+    st.info(
+        "No previous generations found."
+    )
+
+else:
+
+    for item in history[:10]:
+
+        with st.expander(
+            f"ATS Score: {item['ats_score']} | {item['timestamp']}"
+        ):
+
+            st.write(
+                item["job_description_preview"]
+            )
+
+# =========================
 # ADMIN DASHBOARD
 # =========================
 
-if username == "admin":
+if username == "admin" and authentication_status:
 
     st.divider()
 
@@ -1107,3 +1255,39 @@ if username == "admin":
             "Total Feedback Entries",
             get_total_feedback()
         )
+
+    feedback_data = load_feedback_data()
+
+    st.divider()
+
+    st.subheader(
+        "Latest User Feedback"
+    )
+
+    if len(feedback_data) == 0:
+
+        st.info(
+            "No feedback yet."
+        )
+
+    else:
+
+        for item in feedback_data[-5:]:
+
+            with st.expander(
+                f"{item['username']} - {item['feedback']}"
+            ):
+
+                st.write(
+                    item["comment"]
+                )
+
+# =========================
+# FOOTER
+# =========================
+
+st.divider()
+
+st.caption(
+    "AI Resume Automation System © 2026"
+)
