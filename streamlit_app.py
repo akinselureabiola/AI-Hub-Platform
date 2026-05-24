@@ -41,6 +41,14 @@ st.set_page_config(
 )
 
 # =========================
+# SESSION STATE
+# =========================
+
+if "generated" not in st.session_state:
+
+    st.session_state.generated = False
+
+# =========================
 # HEADER
 # =========================
 
@@ -185,6 +193,8 @@ with col1:
 with col2:
 
     if st.button("New Analysis"):
+
+        st.session_state.clear()
 
         st.rerun()
 
@@ -452,126 +462,156 @@ JOB DESCRIPTION:
         )
 
         # =========================
-        # SUCCESS MESSAGE
+        # SAVE TO SESSION STATE
         # =========================
 
-        st.success(
-            "Documents generated successfully."
-        )
+        st.session_state.tailored_resume = tailored_resume
 
-        # =========================
-        # ATS ANALYSIS UI
-        # =========================
+        st.session_state.tailored_cover_letter = tailored_cover_letter
 
-        st.subheader(
-            "ATS Match Analysis"
-        )
+        st.session_state.resume_path = resume_path
 
-        col1, col2 = st.columns(2)
+        st.session_state.cover_letter_path = cover_letter_path
 
-        with col1:
+        st.session_state.timestamp = timestamp
 
-            st.metric(
-                "Estimated ATS Match Score",
-                ats_score
-            )
+        st.session_state.ats_score = ats_score
 
-            st.markdown(
-                "### Matching Keywords"
-            )
+        st.session_state.matching_keywords = matching_keywords
 
-            st.write(
-                matching_keywords
-            )
+        st.session_state.missing_keywords = missing_keywords
 
-        with col2:
+        st.session_state.job_fit_analysis = job_fit_analysis
 
-            st.markdown(
-                "### Missing Keywords"
-            )
-
-            st.write(
-                missing_keywords
-            )
-
-        st.markdown(
-            "### Job Fit Analysis"
-        )
-
-        st.write(
-            job_fit_analysis
-        )
-
-        st.markdown(
-            "### Resume Improvement Suggestions"
-        )
-
-        st.write(
+        st.session_state.improvement_suggestions = (
             improvement_suggestions
         )
 
-        st.divider()
+        st.session_state.generated = True
 
-        # =========================
-        # DOWNLOADS
-        # =========================
+# =========================
+# DISPLAY RESULTS
+# =========================
 
-        col1, col2 = st.columns(2)
+if st.session_state.generated:
 
-        with col1:
+    st.success(
+        "Documents generated successfully."
+    )
 
-            st.subheader(
-                "Tailored Resume"
+    # =========================
+    # ATS ANALYSIS UI
+    # =========================
+
+    st.subheader(
+        "ATS Match Analysis"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.metric(
+            "Estimated ATS Match Score",
+            st.session_state.ats_score
+        )
+
+        st.markdown(
+            "### Matching Keywords"
+        )
+
+        st.write(
+            st.session_state.matching_keywords
+        )
+
+    with col2:
+
+        st.markdown(
+            "### Missing Keywords"
+        )
+
+        st.write(
+            st.session_state.missing_keywords
+        )
+
+    st.markdown(
+        "### Job Fit Analysis"
+    )
+
+    st.write(
+        st.session_state.job_fit_analysis
+    )
+
+    st.markdown(
+        "### Resume Improvement Suggestions"
+    )
+
+    st.write(
+        st.session_state.improvement_suggestions
+    )
+
+    st.divider()
+
+    # =========================
+    # DOWNLOADS
+    # =========================
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader(
+            "Tailored Resume"
+        )
+
+        with st.expander(
+            "Preview Resume"
+        ):
+
+            st.text_area(
+                "",
+                st.session_state.tailored_resume,
+                height=400
             )
 
-            with st.expander(
-                "Preview Resume"
-            ):
+        with open(
+            st.session_state.resume_path,
+            "rb"
+        ) as file:
 
-                st.text_area(
-                    "",
-                    tailored_resume,
-                    height=400
+            st.download_button(
+                "Download Resume",
+                file,
+                file_name=(
+                    f"Resume_{st.session_state.timestamp}.docx"
                 )
-
-            with open(
-                resume_path,
-                "rb"
-            ) as file:
-
-                st.download_button(
-                    "Download Resume",
-                    file,
-                    file_name=(
-                        f"Resume_{timestamp}.docx"
-                    )
-                )
-
-        with col2:
-
-            st.subheader(
-                "Tailored Cover Letter"
             )
 
-            with st.expander(
-                "Preview Cover Letter"
-            ):
+    with col2:
 
-                st.text_area(
-                    "",
-                    tailored_cover_letter,
-                    height=400
+        st.subheader(
+            "Tailored Cover Letter"
+        )
+
+        with st.expander(
+            "Preview Cover Letter"
+        ):
+
+            st.text_area(
+                "",
+                st.session_state.tailored_cover_letter,
+                height=400
+            )
+
+        with open(
+            st.session_state.cover_letter_path,
+            "rb"
+        ) as file:
+
+            st.download_button(
+                "Download Cover Letter",
+                file,
+                file_name=(
+                    f"Cover_Letter_{st.session_state.timestamp}.docx"
                 )
-
-            with open(
-                cover_letter_path,
-                "rb"
-            ) as file:
-
-                st.download_button(
-                    "Download Cover Letter",
-                    file,
-                    file_name=(
-                        f"Cover_Letter_{timestamp}.docx"
-                    )
-                )
+            )
