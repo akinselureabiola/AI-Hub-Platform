@@ -1,5 +1,26 @@
+# Environment
 .env
+
+# Virtual Environments
 venv/
 .venv/
+
+# Python Cache
 __pycache__/
+
+# macOS
 .DS_Store
+
+# Generated Files
+outputs/
+analysis/
+
+# Generated Documents
+*.docx
+*.pdf
+
+# Streamlit Secrets
+.streamlit/secrets.toml
+
+# VS Code
+.vscode/
