@@ -113,11 +113,13 @@ def save_user(
     config["credentials"]["usernames"][username] = {
         "email": email,
         "name": name,
-        "password": hashed_password
+        "password": hashed_password,
+        "role": "user",
+        "daily_limit": 5
     }
 
     with open(
-        "auth_config.yaml",
+        "users.yaml",
         "w"
     ) as file:
 

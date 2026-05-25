@@ -1,10 +1,15 @@
 import bcrypt
 
-password = "admin123"
+passwords = [
+    "Test123",
+    "Test123",
+    "Test123"
+]
 
-hashed = bcrypt.hashpw(
-    password.encode(),
-    bcrypt.gensalt()
-)
+for password in passwords:
+    hashed = bcrypt.hashpw(
+        password.encode(),
+        bcrypt.gensalt()
+    )
 
-print(hashed.decode())
+    print(hashed.decode())
