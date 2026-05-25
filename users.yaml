@@ -1,38 +1,32 @@
+cookie:
+  expiry_days: 30
+  key: some_signature_key
+  name: some_cookie_name
+
 credentials:
   usernames:
 
     admin:
       email: admin@test.com
       name: Admin User
-      password: $2b$12$O0PpEfhz1O2e.c3CAV84uuGAD17FkQMPGjUnFzDdwpbzAqZyGLhhS
+      password: "$2b$12$O0PpEfhz1O2e.c3CAV84uuGAD17FkQMPGjUnFzDdwpbzAqZyGLhhS"
       role: admin
       daily_limit: 9999
 
     bankole:
       email: bankole@test.com
       name: Bankole
-      password: $2b$12$GSZcy/uN57.82UMbBvkcG.autJISZcXJsQvL3PJ3GmEyRw67Umt8m
-      role: user
+      password: "$2b$12$GSZcy/uN57.82UMbBvkcG.autJISZcXJsQvL3PJ3GmEyRw67Umt8m"
       daily_limit: 3
 
     ariyo:
       email: ariyo@test.com
       name: Ariyo
-      password: $2b$12$4E0zi9O3Duhv785Vf5VW/ez7w.25jxjc9J6nHxz0aXRRJKZALl8Jm
-      role: user
+      password: "$2b$12$4E0zi9O3Duhv785Vf5VW/ez7w.25jxjc9J6nHxz0aXRRJKZALl8Jm"
       daily_limit: 3
 
     temitayo:
       email: temitayo@test.com
       name: Temitayo Oluwapelumi
-      password: $2b$12$7kICxbILpUy7.Q8HtDgy.OXLosN9Wh2xHoca8UYwI3QbTdBEU5AKG
-      role: user
+      password: "$2b$12$7kICxbILpUy7.Q8HtDgy.OXLosN9Wh2xHoca8UYwI3QbTdBEU5AKG"
       daily_limit: 5
-
-cookie:
-  expiry_days: 30
-  key: some_signature_key
-  name: some_cookie_name
-
-preauthorized:
-  emails: []
