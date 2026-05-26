@@ -1,6 +1,73 @@
+from collections import Counter
+
 from openai import OpenAI
 import streamlit as st
 import re
+
+
+# ==========================================
+# ATS STOPWORDS
+# ==========================================
+
+STOPWORDS = {
+
+    "and", "the", "for", "with", "this", "that",
+    "from", "your", "have", "will", "into",
+    "their", "they", "them", "about", "over",
+    "under", "more", "less", "very", "using",
+    "used", "user", "users", "people", "hours",
+    "jobs", "job", "work", "working", "role",
+    "team", "within", "across", "ensure",
+    "ensuring", "support", "good", "best",
+    "including", "maintain", "maintaining",
+    "today", "yesterday", "ago", "linkedin",
+    "responses", "exclusive", "click", "apply",
+    "candidate", "company", "professional",
+    "location", "germany", "berlin", "hamburg",
+    "mainz", "hybrid", "remote", "onsite",
+    "fulltime", "parttime"
+
+}
+
+
+# ==========================================
+# HIGH VALUE TECH KEYWORDS
+# ==========================================
+
+TECH_KEYWORDS = {
+
+    "active directory",
+    "microsoft 365",
+    "entra id",
+    "exchange online",
+    "teams",
+    "sharepoint",
+    "onedrive",
+    "vpn",
+    "dns",
+    "dhcp",
+    "tcp/ip",
+    "jira",
+    "intune",
+    "windows",
+    "powershell",
+    "itil",
+    "ticketing",
+    "incident management",
+    "access control",
+    "onboarding",
+    "offboarding",
+    "network troubleshooting",
+    "service desk",
+    "technical support",
+    "endpoint management",
+    "user provisioning",
+    "identity management",
+    "sla",
+    "troubleshooting"
+
+}
+
 
 # ==========================================
 # OPENAI CLIENT
@@ -9,6 +76,20 @@ import re
 client = OpenAI(
     api_key=st.secrets["OPENAI_API_KEY"]
 )
+
+STOPWORDS = {
+    "and", "the", "with", "for", "that", "this",
+    "from", "into", "your", "their", "will",
+    "have", "has", "had", "are", "was", "were",
+    "you", "our", "they", "them", "while",
+    "using", "including", "through", "across",
+    "within", "such", "than", "then", "also",
+    "best", "quality", "service", "support",
+    "team", "teams", "work", "working",
+    "professional", "skills", "experience",
+    "role", "job", "company", "office",
+    "client", "clients"
+}
 
 # ==========================================
 # CLEAN ATS SCORE
@@ -100,37 +181,22 @@ def clean_generated_text(text):
 
     replacements = {
 
-        r"\bWindowsbased\b": "Windows-based",
-        r"\bdaytoday\b": "day-to-day",
-        r"\bbusinesscritical\b": "business-critical",
-        r"\bticketbased\b": "ticket-based",
-        r"\brealworld\b": "real-world",
-        r"\bAIpowered\b": "AI-powered",
-        r"\bhandson\b": "hands-on",
-        r"\bsmallscale\b": "small-scale",
-        r"\bITILbased\b": "ITIL-based",
-        r"\bvendorbased\b": "vendor-based",
-        r"\benduser\b": "end-user",
-        r"\bonsite\b": "on-site",
-        r"\bendtoend\b": "end-to-end",
-        r"\bSLAbased\b": "SLA-based",
-        r"\bSLAdriven\b": "SLA-driven",
-        r"\bPowerShellbased\b": "PowerShell-based",
-        r"\bnetworkbased\b": "network-based",
-        r"\buserfocused\b": "user-focused",
-        r"\bcustomerfocused\b": "customer-focused",
-        r"\bprocessfocused\b": "process-focused",
-        r"\bsecurityfocused\b": "security-focused",
-        r"\bworkflowbased\b": "workflow-based",
-        r"\bknowledgebase\b": "knowledge base",
-        r"\benterprisegrade\b": "enterprise-grade",
-        r"\bcloudbased\b": "cloud-based",
-        r"\bprocessdriven\b": "process-driven",
-        r"\bWindowsServer\b": "Windows Server",
-        r"\bselfservice\b": "self-service",
-        r"\bhelpdesk\b": "help desk",
-        r"\brunbooks\b": "run books",
-        r"\b1525\b": "15–25"
+    "realworld": "real-world",
+    "AIpowered": "AI-powered",
+    "handson": "hands-on",
+    "crossteam": "cross-team",
+    "highquality": "high-quality",
+    "Windowsbased": "Windows-based",
+    "Power Shell": "PowerShell",
+    "Git Hub": "GitHub",
+    "One Drive": "OneDrive",
+    "Share Point": "SharePoint",
+    "ticketbased": "ticket-based",
+    "businesscritical": "business-critical",
+    "selfservice": "self-service",
+    "daytoday": "day-to-day",
+    "SLAbased": "SLA-based",
+    "ITSMbased": "ITSM-based"
 
     }
 
@@ -176,62 +242,34 @@ def clean_generated_text(text):
     return text.strip()
 
 # ==========================================
-# KEYWORD MATCH ENGINE
+# KEYWORD EXTRACTION
 # ==========================================
 
-def calculate_keyword_match(
-    resume_text,
-    job_description
-):
+def extract_keywords(text):
 
-    resume_words = set(
-        resume_text.lower().split()
+    text = text.lower()
+
+    text = re.sub(
+        r"[^a-zA-Z0-9+/#\-\s]",
+        " ",
+        text
     )
 
-    jd_words = set(
-        job_description.lower().split()
-    )
+    words = text.split()
 
-    important_keywords = [
+    cleaned = []
 
-        word for word in jd_words
-        if len(word) > 4
+    for word in words:
 
-    ]
+        if len(word) < 3:
+            continue
 
-    matched = []
-    missing = []
+        if word in STOPWORDS:
+            continue
 
-    for word in important_keywords:
+        cleaned.append(word)
 
-        if word in resume_words:
-
-            matched.append(word)
-
-        else:
-
-            missing.append(word)
-
-    total = len(important_keywords)
-
-    if total == 0:
-
-        score = 0
-
-    else:
-
-        score = int(
-            (len(matched) / total) * 100
-        )
-
-    return {
-
-        "score": score,
-        "matched": matched[:20],
-        "missing": missing[:20]
-
-    }
-
+    return set(cleaned)
 
 # ==========================================
 # GENERATE ATS ANALYSIS
@@ -268,11 +306,86 @@ def generate_ats_analysis(
 # ==========================================
 # GENERATE TAILORED RESUME
 # ==========================================
-
 def generate_tailored_resume(
     resume_text,
-    job_description
+    job_description,
+    job_mode
 ):
+
+    career_focus = ""
+
+    if job_mode == "IT Support":
+
+        career_focus = """
+Focus heavily on:
+- Microsoft 365
+- Active Directory
+- troubleshooting
+- ITSM
+- SLA
+- service desk operations
+- endpoint support
+- onboarding/offboarding
+- VPN
+- DNS
+- DHCP
+"""
+
+    elif job_mode == "Cybersecurity":
+
+        career_focus = """
+Focus heavily on:
+- SIEM
+- SOC
+- IAM
+- cybersecurity operations
+- compliance
+- risk management
+- incident response
+- vulnerability management
+- access control
+"""
+
+    elif job_mode == "Data Analyst":
+
+        career_focus = """
+Focus heavily on:
+- SQL
+- Excel
+- Python
+- Power BI
+- Tableau
+- dashboards
+- reporting
+- analytics
+- data visualization
+"""
+
+    elif job_mode == "Cloud Support":
+
+        career_focus = """
+Focus heavily on:
+- Azure
+- AWS
+- virtualization
+- networking
+- cloud administration
+- infrastructure
+- endpoint management
+"""
+
+    elif job_mode == "DevOps":
+
+        career_focus = """
+Focus heavily on:
+- Docker
+- Kubernetes
+- CI/CD
+- Linux
+- automation
+- scripting
+- infrastructure as code
+"""
 
     prompt = f"""
 You are an elite IT resume writer and recruiter specializing in:
@@ -330,6 +443,9 @@ Use bullet points for achievements.
 MASTER RESUME:
 {resume_text}
 
+CAREER FOCUS:
+{career_focus}
+
 JOB DESCRIPTION:
 {job_description}
 """
@@ -354,7 +470,6 @@ JOB DESCRIPTION:
 
     return clean_generated_text(content)
 
-
 # ==========================================
 # GENERATE COVER LETTER
 # ==========================================
@@ -365,17 +480,25 @@ def generate_cover_letter(
 ):
 
     prompt = f"""
-You are a professional IT recruiter.
+You are a senior technical recruiter writing a modern IT support cover letter.
 
-Generate a modern and realistic IT cover letter.
+Write a concise, realistic, human-sounding cover letter.
 
-IMPORTANT:
-- Human sounding
-- Concise
+RULES:
+- Use natural professional language
+- Avoid generic AI phrases
+- Avoid sounding overly formal
+- Do not repeat the resume
+- Focus on alignment with the role
+- Mention operational support experience
+- Mention Microsoft 365, Active Directory, troubleshooting, and service desk strengths when relevant
+- Show motivation and professionalism
+- Keep it under 350 words
 - No placeholders
 - No fake experience
 - No exaggerated claims
-- Professional but conversational
+
+The tone should sound like a real candidate applying for an IT support or IT operations role in Germany.
 
 TAILORED RESUME:
 {tailored_resume}
@@ -409,9 +532,67 @@ JOB DESCRIPTION:
 # MAIN PIPELINE
 # ==========================================
 
-def run_resume_pipeline(
+
+def calculate_keyword_match(
     resume_text,
     job_description
+):
+
+    # ==========================================
+    # ATS MATCHING LOGIC
+    # ==========================================
+
+    resume_keywords = extract_keywords(
+        resume_text
+    )
+
+    job_keywords = extract_keywords(
+        job_description
+    )
+
+    matched = []
+
+    missing = []
+
+    for keyword in TECH_KEYWORDS:
+
+        keyword_lower = keyword.lower()
+
+        if (
+            keyword_lower in resume_text.lower()
+            and keyword_lower in job_description.lower()
+        ):
+
+            matched.append(keyword)
+
+        elif keyword_lower in job_description.lower():
+
+            missing.append(keyword)
+
+    base_score = int(
+
+        (
+            len(matched)
+            / max(len(matched) + len(missing), 1)
+        ) * 100
+
+    )
+
+    score = min(
+        max(base_score + 8, 20),
+        92
+    )
+
+    return {
+        "score": score,
+        "matched": ", ".join(matched[:25]),
+        "missing": ", ".join(missing[:25])
+    }
+
+def run_resume_pipeline(
+    resume_text,
+    job_description,
+    job_mode
 ):
 
     keyword_results = calculate_keyword_match(
@@ -425,7 +606,8 @@ def run_resume_pipeline(
 
     tailored_resume = generate_tailored_resume(
         resume_text,
-        job_description
+        job_description,
+        job_mode
     )
 
     tailored_cover_letter = generate_cover_letter(

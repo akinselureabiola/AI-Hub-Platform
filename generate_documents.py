@@ -64,9 +64,12 @@ def add_contact_line(doc, text):
 
 def add_section_heading(doc, text):
 
-    heading = doc.add_paragraph()
+    paragraph = doc.add_paragraph()
 
-    run = heading.add_run(text)
+    paragraph.space_before = Pt(14)
+    paragraph.space_after = Pt(6)
+
+    run = paragraph.add_run(text)
 
     run.bold = True
     run.font.size = Pt(14)
@@ -169,10 +172,12 @@ def generate_resume_docx(content, output_path):
                 .strip()
             )
 
-            doc.add_paragraph(
+            bullet = doc.add_paragraph(
                 cleaned,
-                style="List Bullet"
+                 style="List Bullet"
             )
+
+            bullet.paragraph_format.space_after = Pt(3)
 
             continue
 
@@ -180,7 +185,8 @@ def generate_resume_docx(content, output_path):
         # NORMAL TEXT
         # ==========================
 
-        doc.add_paragraph(paragraph)
+        para = doc.add_paragraph(paragraph)
+        para.paragraph_format.space_after = Pt(4)
 
     doc.save(output_path)
 

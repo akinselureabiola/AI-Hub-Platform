@@ -179,6 +179,18 @@ with st.sidebar:
 # =========================
 # INPUTS
 # =========================
+job_mode = st.selectbox(
+
+    "Select Career Path",
+
+    [
+        "IT Support",
+        "Cybersecurity",
+        "Data Analyst",
+        "Cloud Support",
+        "DevOps"
+    ]
+)
 
 uploaded_resume = st.file_uploader(
     "Upload Resume",
@@ -289,7 +301,8 @@ if generate_clicked:
 
             results = run_resume_pipeline(
                 resume_text,
-                job_description
+                job_description,
+                job_mode
             )
 
             tailored_resume = results[
@@ -500,22 +513,79 @@ if st.session_state.generated:
             optimized_score / 100
         )
 
-        st.markdown(
-            "### Matching Keywords"
-        )
+        if optimized_score >= 75:
 
-        st.write(
-            st.session_state.matching_keywords
-        )
+            st.success("Strong ATS Match")
 
+        elif optimized_score >= 50:
+
+            st.warning("Moderate ATS Match")
+
+        else:
+
+            st.error("Low ATS Match")
+
+        st.markdown("### Matching Keywords")
+
+keywords = st.session_state.matching_keywords
+
+if isinstance(keywords, str):
+
+    keywords = [
+        k.strip()
+        for k in keywords.split(",")
+        if k.strip()
+    ]
+
+for keyword in keywords:
+
+    st.markdown(
+        f"""
+        <span style="
+            background-color:#1e3a5f;
+            padding:8px 14px;
+            border-radius:20px;
+            margin:5px;
+            display:inline-block;
+            font-size:14px;
+        ">
+        {keyword}
+        </span>
+        """,
+        unsafe_allow_html=True
+    )
     with col2:
 
         st.markdown(
             "### Missing Keywords"
         )
 
-        st.write(
-            st.session_state.missing_keywords
+        missing_keywords = st.session_state.missing_keywords
+
+        if isinstance(missing_keywords, str):
+
+            missing_keywords = [
+                k.strip()
+                for k in missing_keywords.split(",")
+                if k.strip()
+            ]
+
+        for keyword in missing_keywords:
+
+            st.markdown(
+            f"""
+            <span style="
+                background-color:#5f1e1e;
+                padding:8px 14px;
+                border-radius:20px;
+                margin:5px;
+                display:inline-block;
+                font-size:14px;
+            ">
+            {keyword}
+            </span>
+            """,
+            unsafe_allow_html=True
         )
 
     st.markdown(
