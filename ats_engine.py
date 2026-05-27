@@ -77,19 +77,6 @@ client = OpenAI(
     api_key=st.secrets["OPENAI_API_KEY"]
 )
 
-STOPWORDS = {
-    "and", "the", "with", "for", "that", "this",
-    "from", "into", "your", "their", "will",
-    "have", "has", "had", "are", "was", "were",
-    "you", "our", "they", "them", "while",
-    "using", "including", "through", "across",
-    "within", "such", "than", "then", "also",
-    "best", "quality", "service", "support",
-    "team", "teams", "work", "working",
-    "professional", "skills", "experience",
-    "role", "job", "company", "office",
-    "client", "clients"
-}
 
 # ==========================================
 # CLEAN ATS SCORE
@@ -286,21 +273,14 @@ def generate_ats_analysis(
         ),
 
         "optimized_ats_score": str(
-            min(
-                keyword_results["score"] + 15,
-                95
-            )
+            keyword_results["score"]
         ),
 
-        "matching_keywords": ", ".join(
-            keyword_results["matched"]
-        ),
+        "matching_keywords": keyword_results["matched"],
 
-        "missing_keywords": ", ".join(
-            keyword_results["missing"]
-        )
+        "missing_keywords": keyword_results["missing"]
 
-    }
+            }
 
 
 # ==========================================
@@ -529,6 +509,62 @@ JOB DESCRIPTION:
 
 
 # ==========================================
+# GENERATE INTERVIEW QUESTIONS
+# ==========================================
+
+def generate_interview_questions(
+    tailored_resume,
+    job_description
+):
+
+    prompt = f"""
+You are a senior IT hiring manager.
+
+Generate realistic interview questions based on:
+
+1. The candidate resume
+2. The target job description
+
+Generate:
+
+- 5 technical questions
+- 3 behavioral questions
+- 2 scenario-based questions
+
+Requirements:
+- Keep questions realistic
+- Focus on technologies mentioned
+- Focus on operational experience
+- Focus on troubleshooting
+- Avoid generic questions
+- Make them recruiter realistic
+
+RESUME:
+{tailored_resume}
+
+JOB DESCRIPTION:
+{job_description}
+"""
+
+    response = client.chat.completions.create(
+
+        model="gpt-4.1-mini",
+
+        temperature=0.5,
+
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+
+    return clean_generated_text(
+        response.choices[0].message.content
+    )
+
+# ==========================================
 # MAIN PIPELINE
 # ==========================================
 
@@ -578,15 +614,19 @@ def calculate_keyword_match(
 
     )
 
-    score = min(
-        max(base_score + 8, 20),
-        92
-    )
+    if base_score >= 75:
+        score = min(base_score, 88)
+
+    elif base_score >= 50:
+        score = min(base_score, 72)
+
+    else:
+        score = min(base_score, 48)
 
     return {
         "score": score,
-        "matched": ", ".join(matched[:25]),
-        "missing": ", ".join(missing[:25])
+        "matched": matched[:25],
+        "missing": missing[:25]
     }
 
 def run_resume_pipeline(
@@ -634,3 +674,59 @@ def run_resume_pipeline(
         "improvement_suggestions": "Improve missing keyword coverage and strengthen measurable technical achievements."
 
     }
+
+# ==========================================
+# GENERATE INTERVIEW QUESTIONS
+# ==========================================
+
+def generate_interview_questions(
+    tailored_resume,
+    job_description
+):
+
+    prompt = f"""
+You are a senior IT hiring manager.
+
+Generate realistic interview questions based on:
+
+1. The candidate resume
+2. The target job description
+
+Generate:
+
+- 5 technical questions
+- 3 behavioral questions
+- 2 scenario-based questions
+
+Requirements:
+- Keep questions realistic
+- Focus on technologies mentioned
+- Focus on operational experience
+- Focus on troubleshooting
+- Avoid generic questions
+- Make them recruiter realistic
+
+RESUME:
+{tailored_resume}
+
+JOB DESCRIPTION:
+{job_description}
+"""
+
+    response = client.chat.completions.create(
+
+        model="gpt-4.1-mini",
+
+        temperature=0.5,
+
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+
+    return clean_generated_text(
+        response.choices[0].message.content
+    )

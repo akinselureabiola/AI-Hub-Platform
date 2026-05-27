@@ -1,47 +1,18 @@
 import os
-from pathlib import Path
 from datetime import datetime
 
 import streamlit as st
+
 from dotenv import load_dotenv
-
-from auth import (
-    render_auth_page,
-    check_authentication
-)
-
-from file_utils import (
-    extract_resume_text,
-    validate_file_size
-)
-
-from usage_tracker import (
-    get_remaining_usage,
-    has_remaining_usage,
-    increment_user_usage
-)
-
-from history_manager import (
-    save_generation_history,
-    load_user_history,
-    get_total_generations,
-    get_total_users
-)
-
-from feedback_manager import (
-    save_feedback,
-    load_feedback_data,
-    get_total_feedback
-)
-
-from ats_engine import (
-    run_resume_pipeline,
-    clean_ats_score
-)
+from openai import OpenAI
 
 from generate_documents import (
     generate_resume_docx,
     generate_cover_letter_docx
+)
+
+from file_utils import (
+    extract_resume_text
 )
 
 # =========================
@@ -50,56 +21,19 @@ from generate_documents import (
 
 load_dotenv()
 
-# =========================
-# CREATE DATA FOLDERS
-# =========================
-
-folders = [
-
-    "data/usage",
-
-    "data/feedback",
-
-    "data/history",
-
-    "outputs",
-
-    "analysis"
-]
-
-for folder in folders:
-
-    Path(folder).mkdir(
-        parents=True,
-        exist_ok=True
-    )
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
 
 # =========================
 # PAGE CONFIG
 # =========================
 
 st.set_page_config(
-
-    page_title="AI Resume Automation",
-
+    page_title="AI Resume Assistant",
     page_icon="📄",
-
     layout="wide"
 )
-
-# =========================
-# AUTH
-# =========================
-
-authenticator, config = render_auth_page()
-
-auth_data = check_authentication()
-
-username = auth_data["username"]
-
-name = auth_data["name"]
-
-authentication_status = auth_data["authentication_status"]
 
 # =========================
 # SESSION STATE
@@ -110,152 +44,141 @@ if "generated" not in st.session_state:
     st.session_state.generated = False
 
 # =========================
-# HEADER
+# PAGE HEADER
 # =========================
 
 st.title(
-    "📄 AI Resume Automation System"
+    "📄 AI Resume Assistant"
 )
 
 st.markdown(
-    f"Welcome **{name}**"
-)
+    """
+Upload your resume and paste a job description to generate:
 
-st.markdown(
-    "Generate ATS-optimized recruiter-ready resumes and cover letters."
-)
-
-# =========================
-# USAGE
-# =========================
-
-remaining_usage = get_remaining_usage(
-    config,
-    username
+- ATS analysis
+- Tailored resume
+- Tailored cover letter
+"""
 )
 
 # =========================
-# SIDEBAR
+# FILE UPLOAD
 # =========================
-
-with st.sidebar:
-
-    st.header(
-        "AI Resume Automation"
-    )
-
-    st.markdown(
-        """
-        ### Features
-
-        - ATS Match Analysis
-        - Resume Tailoring
-        - Cover Letter Generation
-        - DOCX Export
-        - Recruiter Optimization
-        - Achievement Rewriting
-        - ATS Optimization Loop
-        - Feedback Tracking
-        - Usage Tracking
-        - Generation History
-        """
-    )
-
-    st.info(
-        f"Daily Generations Left: {remaining_usage}"
-    )
-
-    st.divider()
-
-    st.caption(
-        "Built with Streamlit + OpenAI"
-    )
-
-    authenticator.logout(
-        "Logout",
-        "sidebar"
-    )
-
-# =========================
-# INPUTS
-# =========================
-job_mode = st.selectbox(
-
-    "Select Career Path",
-
-    [
-        "IT Support",
-        "Cybersecurity",
-        "Data Analyst",
-        "Cloud Support",
-        "DevOps"
-    ]
-)
 
 uploaded_resume = st.file_uploader(
     "Upload Resume",
-    type=[
-        "pdf",
-        "docx",
-        "txt"
-    ]
+    type=["pdf", "docx", "txt"]
 )
-
-if uploaded_resume:
-
-    if not validate_file_size(
-        uploaded_resume
-    ):
-
-        st.error(
-            "Resume file too large. Maximum file size is 5MB."
-        )
-
-        st.stop()
 
 job_description = st.text_area(
     "Paste Job Description",
-    height=350
+    height=300
+)
+
+generate_clicked = st.button(
+    "Generate Documents"
 )
 
 # =========================
-# BUTTONS
+# SYSTEM PROMPT
 # =========================
 
-col1, col2 = st.columns([1, 1])
+SYSTEM_PROMPT = """
+You are an experienced IT recruiter and ATS optimization specialist.
 
-with col1:
+Your tasks:
 
-    generate_clicked = st.button(
-        "Generate Documents"
-    )
+1. Analyze the resume against the job description
+2. Provide a realistic ATS score
+3. Identify matching keywords
+4. Identify missing keywords
+5. Provide realistic improvement suggestions
+6. Generate a recruiter-ready tailored resume
+7. Generate a tailored professional cover letter
 
-with col2:
+IMPORTANT RULES:
 
-    if st.button(
-        "New Analysis"
-    ):
+- Be realistic with ATS scoring
+- Do NOT inflate scores
+- Prioritize technical alignment
+- Avoid robotic AI wording
+- Keep all writing natural and human
+- Never invent fake experience
+- Tailor closely to the job description
+- Keep resume recruiter-friendly
 
-        st.session_state.clear()
+Return EXACTLY in this format:
 
-        st.rerun()
+===ATS_SCORE===
+[score]
+
+===MATCHING_KEYWORDS===
+[keywords]
+
+===MISSING_KEYWORDS===
+[keywords]
+
+===IMPROVEMENT_SUGGESTIONS===
+[suggestions]
+
+===TAILORED_RESUME===
+[resume]
+
+===COVER_LETTER===
+[cover letter]
+"""
+
+# =========================
+# HELPER FUNCTIONS
+# =========================
+
+def extract_section(
+    text,
+    start,
+    end=None
+):
+
+    try:
+
+        if end:
+
+            return (
+                text
+                .split(start)[1]
+                .split(end)[0]
+                .strip()
+            )
+
+        return (
+            text
+            .split(start)[1]
+            .strip()
+        )
+
+    except:
+
+        return "Not available"
+
+
+def clean_ats_score(score_text):
+
+    try:
+
+        digits = "".join(
+            filter(str.isdigit, score_text)
+        )
+
+        return int(digits)
+
+    except:
+
+        return 0
 
 # =========================
 # MAIN PROCESS
 # =========================
 
 if generate_clicked:
-
-    if not has_remaining_usage(
-        config,
-        username
-    ):
-
-        st.error(
-            "Daily usage limit reached."
-        )
-
-        st.stop()
 
     if not uploaded_resume:
 
@@ -288,98 +211,94 @@ if generate_clicked:
     try:
 
         with st.spinner(
-            "Optimizing resume and generating documents..."
+            "Generating recruiter-ready documents..."
         ):
+
+            prompt = f"""
+RESUME:
+
+{resume_text}
+
+JOB DESCRIPTION:
+
+{job_description}
+"""
+
+            response = client.chat.completions.create(
+                model="gpt-4.1-mini",
+
+                messages=[
+                    {
+                        "role": "system",
+                        "content": SYSTEM_PROMPT
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+
+                temperature=0.6
+            )
+
+            output = (
+                response
+                .choices[0]
+                .message
+                .content
+            )
+
+            # =========================
+            # EXTRACT RESULTS
+            # =========================
+
+            ats_score = extract_section(
+                output,
+                "===ATS_SCORE===",
+                "===MATCHING_KEYWORDS==="
+            )
+
+            matching_keywords = extract_section(
+                output,
+                "===MATCHING_KEYWORDS===",
+                "===MISSING_KEYWORDS==="
+            )
+
+            missing_keywords = extract_section(
+                output,
+                "===MISSING_KEYWORDS===",
+                "===IMPROVEMENT_SUGGESTIONS==="
+            )
+
+            improvement_suggestions = extract_section(
+                output,
+                "===IMPROVEMENT_SUGGESTIONS===",
+                "===TAILORED_RESUME==="
+            )
+
+            tailored_resume = extract_section(
+                output,
+                "===TAILORED_RESUME===",
+                "===COVER_LETTER==="
+            )
+
+            cover_letter = extract_section(
+                output,
+                "===COVER_LETTER==="
+            )
+
+            # =========================
+            # GENERATE DOCX FILES
+            # =========================
+
+            os.makedirs(
+                "outputs",
+                exist_ok=True
+            )
 
             timestamp = datetime.now().strftime(
                 "%Y%m%d_%H%M%S"
             )
-
-            # =========================
-            # RUN AI PIPELINE
-            # =========================
-
-            results = run_resume_pipeline(
-                resume_text,
-                job_description,
-                job_mode
-            )
-
-            tailored_resume = results[
-                "tailored_resume"
-            ]
-
-            tailored_cover_letter = results[
-                "tailored_cover_letter"
-            ]
-
-            original_ats_score = results[
-                "original_ats_score"
-            ]
-
-            optimized_ats_score = results[
-                "optimized_ats_score"
-            ]
-
-            matching_keywords = results[
-                "matching_keywords"
-            ]
-
-            missing_keywords = results[
-                "missing_keywords"
-            ]
-
-            job_fit_analysis = results[
-                "job_fit_analysis"
-            ]
-
-            improvement_suggestions = results[
-                "improvement_suggestions"
-            ]
-
-            # =========================
-            # SAVE ANALYSIS
-            # =========================
-
-            analysis_filename = (
-                f"analysis/ats_analysis_{timestamp}.txt"
-            )
-
-            analysis_content = f"""
-ATS MATCH ANALYSIS
-
-ORIGINAL ATS SCORE:
-{original_ats_score}
-
-OPTIMIZED ATS SCORE:
-{optimized_ats_score}
-
-MATCHING KEYWORDS:
-{matching_keywords}
-
-MISSING KEYWORDS:
-{missing_keywords}
-
-JOB FIT ANALYSIS:
-{job_fit_analysis}
-
-RESUME IMPROVEMENT SUGGESTIONS:
-{improvement_suggestions}
-"""
-
-            with open(
-                analysis_filename,
-                "w",
-                encoding="utf-8"
-            ) as file:
-
-                file.write(
-                    analysis_content
-                )
-
-            # =========================
-            # DOCX GENERATION
-            # =========================
 
             resume_filename = (
                 f"outputs/resume_{timestamp}.docx"
@@ -396,35 +315,39 @@ RESUME IMPROVEMENT SUGGESTIONS:
 
             cover_letter_path = (
                 generate_cover_letter_docx(
-                    tailored_cover_letter,
+                    cover_letter,
                     cover_letter_filename
                 )
             )
 
             # =========================
-            # TRACKING
+            # SAVE TO SESSION STATE
             # =========================
 
-            increment_user_usage(
-                username
+            st.session_state.generated = True
+
+            st.session_state.ats_score = (
+                ats_score
             )
 
-            save_generation_history(
-                username,
-                optimized_ats_score,
-                job_description
+            st.session_state.matching_keywords = (
+                matching_keywords
             )
 
-            # =========================
-            # SESSION STATE
-            # =========================
+            st.session_state.missing_keywords = (
+                missing_keywords
+            )
+
+            st.session_state.improvement_suggestions = (
+                improvement_suggestions
+            )
 
             st.session_state.tailored_resume = (
                 tailored_resume
             )
 
-            st.session_state.tailored_cover_letter = (
-                tailored_cover_letter
+            st.session_state.cover_letter = (
+                cover_letter
             )
 
             st.session_state.resume_path = (
@@ -439,39 +362,11 @@ RESUME IMPROVEMENT SUGGESTIONS:
                 timestamp
             )
 
-            st.session_state.original_ats_score = (
-                original_ats_score
-            )
-
-            st.session_state.optimized_ats_score = (
-                optimized_ats_score
-            )
-
-            st.session_state.matching_keywords = (
-                matching_keywords
-            )
-
-            st.session_state.missing_keywords = (
-                missing_keywords
-            )
-
-            st.session_state.job_fit_analysis = (
-                job_fit_analysis
-            )
-
-            st.session_state.improvement_suggestions = (
-                improvement_suggestions
-            )
-
-            st.session_state.generated = True
-
     except Exception as error:
 
         st.error(
             f"Generation failed: {error}"
         )
-
-        st.stop()
 
 # =========================
 # DISPLAY RESULTS
@@ -483,121 +378,73 @@ if st.session_state.generated:
         "Documents generated successfully."
     )
 
-    st.subheader(
-        "ATS Match Analysis"
+    score = clean_ats_score(
+        st.session_state.ats_score
     )
 
     col1, col2 = st.columns(2)
 
+    # =========================
+    # LEFT COLUMN
+    # =========================
+
     with col1:
 
-        original_score = clean_ats_score(
-            st.session_state.original_ats_score
-        )
-
-        optimized_score = clean_ats_score(
-            st.session_state.optimized_ats_score
-        )
-
         st.metric(
-            "Original ATS Score",
-            f"{original_score}%"
-        )
-
-        st.metric(
-            "Optimized ATS Score",
-            f"{optimized_score}%"
+            "ATS Match Score",
+            f"{score}%"
         )
 
         st.progress(
-            optimized_score / 100
+            score / 100
         )
 
-        if optimized_score >= 75:
+        if score >= 80:
 
-            st.success("Strong ATS Match")
+            st.success(
+                "Strong ATS Match"
+            )
 
-        elif optimized_score >= 50:
+        elif score >= 65:
 
-            st.warning("Moderate ATS Match")
+            st.warning(
+                "Moderate ATS Match"
+            )
 
         else:
 
-            st.error("Low ATS Match")
+            st.error(
+                "Low ATS Match"
+            )
 
-        st.markdown("### Matching Keywords")
+        st.markdown(
+            "### Matching Keywords"
+        )
 
-keywords = st.session_state.matching_keywords
+        st.write(
+            st.session_state.matching_keywords
+        )
 
-if isinstance(keywords, str):
+    # =========================
+    # RIGHT COLUMN
+    # =========================
 
-    keywords = [
-        k.strip()
-        for k in keywords.split(",")
-        if k.strip()
-    ]
-
-for keyword in keywords:
-
-    st.markdown(
-        f"""
-        <span style="
-            background-color:#1e3a5f;
-            padding:8px 14px;
-            border-radius:20px;
-            margin:5px;
-            display:inline-block;
-            font-size:14px;
-        ">
-        {keyword}
-        </span>
-        """,
-        unsafe_allow_html=True
-    )
     with col2:
 
         st.markdown(
             "### Missing Keywords"
         )
 
-        missing_keywords = st.session_state.missing_keywords
-
-        if isinstance(missing_keywords, str):
-
-            missing_keywords = [
-                k.strip()
-                for k in missing_keywords.split(",")
-                if k.strip()
-            ]
-
-        for keyword in missing_keywords:
-
-            st.markdown(
-            f"""
-            <span style="
-                background-color:#5f1e1e;
-                padding:8px 14px;
-                border-radius:20px;
-                margin:5px;
-                display:inline-block;
-                font-size:14px;
-            ">
-            {keyword}
-            </span>
-            """,
-            unsafe_allow_html=True
+        st.write(
+            st.session_state.missing_keywords
         )
 
-    st.markdown(
-        "### Job Fit Analysis"
-    )
-
-    st.write(
-        st.session_state.job_fit_analysis
-    )
+    # =========================
+    # IMPROVEMENTS
+    # =========================
 
     st.markdown(
-        "### Resume Improvement Suggestions"
+        "### Improvement Suggestions"
     )
 
     st.write(
@@ -605,6 +452,10 @@ for keyword in keywords:
     )
 
     st.divider()
+
+    # =========================
+    # DOCUMENTS
+    # =========================
 
     col1, col2 = st.columns(2)
 
@@ -623,7 +474,7 @@ for keyword in keywords:
         ):
 
             st.text_area(
-                "Resume Preview",
+                "Resume",
                 st.session_state.tailored_resume,
                 height=400,
                 label_visibility="collapsed"
@@ -649,7 +500,7 @@ for keyword in keywords:
     with col2:
 
         st.subheader(
-            "Tailored Cover Letter"
+            "Cover Letter"
         )
 
         with st.expander(
@@ -657,8 +508,8 @@ for keyword in keywords:
         ):
 
             st.text_area(
-                "Cover Letter Preview",
-                st.session_state.tailored_cover_letter,
+                "Cover Letter",
+                st.session_state.cover_letter,
                 height=400,
                 label_visibility="collapsed"
             )
@@ -675,142 +526,3 @@ for keyword in keywords:
                     f"Cover_Letter_{st.session_state.timestamp}.docx"
                 )
             )
-
-    # =========================
-    # FEEDBACK
-    # =========================
-
-    st.divider()
-
-    st.subheader(
-        "Feedback"
-    )
-
-    feedback_type = st.radio(
-        "Was this helpful?",
-        [
-            "Helpful",
-            "Needs Improvement"
-        ]
-    )
-
-    feedback_comment = st.text_area(
-        "Additional Feedback"
-    )
-
-    if st.button(
-        "Submit Feedback"
-    ):
-
-        save_feedback(
-            username,
-            feedback_type,
-            feedback_comment
-        )
-
-        st.success(
-            "Feedback submitted."
-        )
-
-# =========================
-# HISTORY
-# =========================
-
-st.divider()
-
-st.subheader(
-    "My Generation History"
-)
-
-history = load_user_history(
-    username
-)
-
-if len(history) == 0:
-
-    st.info(
-        "No previous generations found."
-    )
-
-else:
-
-    for item in history[:10]:
-
-        with st.expander(
-            f"ATS Score: {item['ats_score']} | {item['timestamp']}"
-        ):
-
-            st.write(
-                item["job_description_preview"]
-            )
-
-# =========================
-# ADMIN DASHBOARD
-# =========================
-
-if username == "admin" and authentication_status:
-
-    st.divider()
-
-    st.subheader(
-        "Admin Analytics Dashboard"
-    )
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-
-        st.metric(
-            "Total Users",
-            get_total_users()
-        )
-
-    with col2:
-
-        st.metric(
-            "Total Generations",
-            get_total_generations()
-        )
-
-    with col3:
-
-        st.metric(
-            "Total Feedback Entries",
-            get_total_feedback()
-        )
-
-    feedback_data = load_feedback_data()
-
-    st.divider()
-
-    st.subheader(
-        "Latest User Feedback"
-    )
-
-    if len(feedback_data) == 0:
-
-        st.info(
-            "No feedback yet."
-        )
-
-    else:
-
-        for item in feedback_data[-5:]:
-
-            with st.expander(
-                f"{item['username']} - {item['feedback']}"
-            ):
-
-                st.write(
-                    item["comment"]
-                )
-
-# =========================
-# FOOTER
-# =========================
-
-st.divider()
-
-st.caption(
-    "AI Resume Automation System © 2026"
-)
