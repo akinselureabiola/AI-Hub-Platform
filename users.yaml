@@ -54,3 +54,9 @@ credentials:
       name: Ahmed
       password: "$2b$12$3CKwvH8z.PTL9.tCxXYwuuEUGq9E4PITXuYaKSY5GgLfX9S2N6q3m"
       daily_limit: 5
+
+    amara:
+      email: amara@test.com
+      name: Amara
+      password: "$2b$12$xjBpC569eT.BrQVn6H4uXuP5tKhMA7yOniqOBH1ggE742OdsrCeeG"
+      daily_limit: 5

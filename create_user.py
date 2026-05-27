@@ -1,3 +1,4 @@
+
 import bcrypt
 
 users = {
@@ -8,7 +9,8 @@ users = {
     "oluwaseyi": "Test123",
     "ayodeji": "Test123",
     "daizsign": "Test123",
-    "ahmed": "Test123"
+    "ahmed": "Test123",
+    "amara": "Test123"
 }
 
 print("\nGenerated Password Hashes:\n")
