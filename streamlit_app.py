@@ -164,11 +164,17 @@ def clean_ats_score(score_text):
 
     try:
 
-        digits = "".join(
-            filter(str.isdigit, score_text)
-        )
+        import re
 
-        return int(digits)
+        match = re.search(r"\d+", score_text)
+
+        if match:
+
+            score = int(match.group())
+
+            return min(max(score, 0), 100)
+
+        return 0
 
     except:
 
@@ -395,9 +401,9 @@ if st.session_state.generated:
             f"{score}%"
         )
 
-        st.progress(
-            score / 100
-        )
+        safe_score = min(max(int(score), 0), 100)
+
+        st.progress(safe_score)
 
         if score >= 80:
 
