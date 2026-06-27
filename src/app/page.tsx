@@ -1,28 +1,8 @@
 "use client";
 import { useState } from "react";
 
-type Message = { role: 'user' | 'bot'; text: string };
-
 export default function DashboardPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-
-  const handleSend = (text: string) => {
-    const messageText = text || input;
-    if (!messageText.trim()) return;
-    
-    const newMessages: Message[] = [...messages, { role: 'user', text: messageText }];
-    setMessages(newMessages);
-    
-    setTimeout(() => {
-      setMessages([...newMessages, { 
-        role: 'bot', 
-        text: `[MOCK MODE ACTIVE] The bridge is perfectly wired! I received your message: "${messageText}". Your frontend is ready for the real Brain.` 
-      }]);
-    }, 600);
-    
-    setInput("");
-  };
 
   const actionCards = [
     "Ask your AI agent anything", 
@@ -32,100 +12,67 @@ export default function DashboardPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#020617] text-white p-4 font-sans w-full overflow-x-hidden">
-      <nav className="flex justify-between items-center py-4 mb-6">
-        <h1 className="text-xl font-bold">AI Hub</h1>
-        <div className="hidden sm:flex gap-6 text-sm text-slate-400">
-          <span className="text-white">Home</span>
-          <span>Features</span>
-          <span>Docs</span>
-        </div>
-      </nav>
-
-      <div className="bg-[#0b1120] border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-6">
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-600 p-3 rounded-lg font-bold">W</div>
-            <div>
-              <p className="text-[10px] uppercase text-slate-400 tracking-wider">WA³S</p>
-              <h2 className="font-bold text-lg">Dashboard</h2>
-            </div>
+    <main className="min-h-screen bg-gray-950 text-white font-sans w-full overflow-x-hidden">
+      <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 lg:px-8">
+        
+        {/* Header - Stacks on mobile, side-by-side on desktop */}
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold">Your AI Cockpit</h1>
+            <p className="text-sm text-gray-400 mt-1">Welcome back, WA³S Dashboard</p>
           </div>
-          <div className="flex-1 md:mx-8">
-            <p className="text-slate-400 text-xs uppercase tracking-widest">Welcome back</p>
-            <h1 className="text-2xl sm:text-3xl font-bold">Your AI cockpit</h1>
+          <div className="rounded-full bg-gray-900 px-4 py-2 text-sm text-gray-300 break-all border border-gray-800">
+            daizsign@gmail.com
           </div>
-          <div className="bg-[#1e293b] px-4 py-2 rounded-full flex items-center gap-3 w-full md:w-auto">
-            <div className="bg-blue-500 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">DA</div>
-            <div className="truncate">
-              <p className="text-xs font-medium truncate">daizsign@gmail.com</p>
-              <p className="text-[10px] text-green-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online
-              </p>
-            </div>
-          </div>
-        </div>
+        </header>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="hidden md:block col-span-1 space-y-4">
-            <div className="bg-[#1e293b] p-3 rounded-xl font-medium border-l-2 border-blue-500">Home</div>
-            <div className="p-3 text-slate-400">AI Agents</div>
-            <div className="p-3 text-slate-400">Settings</div>
-            <div className="mt-8 p-4 bg-[#020617] rounded-xl border border-slate-800">
-              <p className="text-xs uppercase text-slate-500 mb-2">Workspace</p>
-              <div className="flex items-center gap-3 bg-[#1e293b] p-2 rounded-lg">
-                <div className="bg-slate-700 p-2 rounded">AI</div>
-                <div>
-                  <p className="text-sm font-bold">Agent Lab</p>
-                  <p className="text-[10px] text-slate-400">Build and run your AI agents</p>
-                </div>
-              </div>
+        {/* Layout - Horizontal scroll sidebar on mobile, fixed column on desktop */}
+        <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+          
+          <aside className="overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+            <div className="flex gap-2 lg:flex-col">
+              <button className="whitespace-nowrap rounded-lg bg-blue-600 px-4 py-3 font-medium">Home</button>
+              <button className="whitespace-nowrap rounded-lg bg-gray-900 px-4 py-3 text-gray-300 hover:bg-gray-800">AI Agents</button>
+              <button className="whitespace-nowrap rounded-lg bg-gray-900 px-4 py-3 text-gray-300 hover:bg-gray-800">Settings</button>
             </div>
-          </div>
+          </aside>
 
-          {/* Chat Panel */}
-          <div className="col-span-1 md:col-span-3">
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-[10px] uppercase text-slate-500">AI CHAT</p>
-              <span className="text-[10px] bg-green-900/30 text-green-400 px-2 py-0.5 rounded border border-green-900">LIVE BETA</span>
+          {/* Main Content Area */}
+          <section className="rounded-xl border border-gray-800 bg-gray-900 p-4 sm:p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">WA³S Assistant</h2>
+              <span className="rounded bg-green-900/30 px-3 py-1 text-xs font-semibold text-green-400 border border-green-900">
+                LIVE BETA
+              </span>
             </div>
-            <h2 className="text-2xl font-bold mb-2">WA³S Assistant</h2>
-            <p className="text-green-400 font-bold text-sm mb-6">AGENT STATUS: READY</p>
+            
+            <p className="text-green-400 font-semibold text-sm mb-6">AGENT STATUS: READY</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {/* Responsive Action Cards - 1 col mobile, 2 col desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {actionCards.map((text) => (
                 <button 
-                  key={text} 
-                  onClick={() => handleSend(text)}
-                  className="border border-slate-800 p-4 rounded-xl text-sm text-slate-300 hover:border-blue-500 transition-all text-left"
+                  key={text}
+                  className="rounded-xl border border-gray-700 bg-gray-950 p-5 text-left text-gray-300 hover:border-blue-500 transition-all"
                 >
                   {text}
                 </button>
               ))}
             </div>
 
-            <div className="bg-[#020617] border border-slate-800 rounded-xl p-4 h-[250px] overflow-y-auto mb-4 flex flex-col gap-3">
-              {messages.map((m, i) => (
-                <div key={i} className={`p-3 rounded-lg text-sm max-w-[80%] ${m.role === 'user' ? 'bg-blue-600 self-end' : 'bg-[#1e293b] self-start'}`}>
-                  {m.text}
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <input 
-                className="flex-1 bg-[#020617] border border-slate-800 p-3 rounded-xl text-sm"
+            {/* Responsive Input Section */}
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <input
+                className="h-12 flex-1 rounded-lg border border-gray-700 bg-gray-950 px-4 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
                 placeholder="Ask your AI agent anything..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
               />
-              <button onClick={() => handleSend(input)} className="bg-blue-600 px-6 rounded-xl text-sm font-bold">Send</button>
+              <button className="h-12 rounded-lg bg-blue-600 px-8 font-medium text-white hover:bg-blue-700">
+                Send
+              </button>
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </main>
