@@ -32,18 +32,19 @@ export default function DashboardPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#020617] text-white p-4 font-sans">
+    <main className="min-h-screen bg-[#020617] text-white p-4 font-sans w-full overflow-x-hidden">
       <nav className="flex justify-between items-center py-4 mb-6">
         <h1 className="text-xl font-bold">AI Hub</h1>
-        <div className="flex gap-6 text-sm text-slate-400">
+        <div className="hidden sm:flex gap-6 text-sm text-slate-400">
           <span className="text-white">Home</span>
           <span>Features</span>
           <span>Docs</span>
         </div>
       </nav>
 
-      <div className="bg-[#0b1120] border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex justify-between items-start mb-8">
+      <div className="bg-[#0b1120] border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-6">
           <div className="flex items-center gap-4">
             <div className="bg-blue-600 p-3 rounded-lg font-bold">W</div>
             <div>
@@ -51,23 +52,25 @@ export default function DashboardPage() {
               <h2 className="font-bold text-lg">Dashboard</h2>
             </div>
           </div>
-          <div className="flex-1 mx-8">
+          <div className="flex-1 md:mx-8">
             <p className="text-slate-400 text-xs uppercase tracking-widest">Welcome back</p>
-            <h1 className="text-3xl font-bold">Your AI cockpit</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Your AI cockpit</h1>
           </div>
-          <div className="bg-[#1e293b] px-4 py-2 rounded-full flex items-center gap-3">
+          <div className="bg-[#1e293b] px-4 py-2 rounded-full flex items-center gap-3 w-full md:w-auto">
             <div className="bg-blue-500 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">DA</div>
-            <div>
-              <p className="text-xs font-medium">daizsign@gmail.com</p>
+            <div className="truncate">
+              <p className="text-xs font-medium truncate">daizsign@gmail.com</p>
               <p className="text-[10px] text-green-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online - Active now
+                <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online
               </p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-6">
-          <div className="col-span-1 space-y-4">
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Sidebar */}
+          <div className="hidden md:block col-span-1 space-y-4">
             <div className="bg-[#1e293b] p-3 rounded-xl font-medium border-l-2 border-blue-500">Home</div>
             <div className="p-3 text-slate-400">AI Agents</div>
             <div className="p-3 text-slate-400">Settings</div>
@@ -83,7 +86,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="col-span-3">
+          {/* Chat Panel */}
+          <div className="col-span-1 md:col-span-3">
             <div className="flex justify-between items-center mb-4">
               <p className="text-[10px] uppercase text-slate-500">AI CHAT</p>
               <span className="text-[10px] bg-green-900/30 text-green-400 px-2 py-0.5 rounded border border-green-900">LIVE BETA</span>
@@ -91,8 +95,7 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold mb-2">WA³S Assistant</h2>
             <p className="text-green-400 font-bold text-sm mb-6">AGENT STATUS: READY</p>
 
-            {/* Interactive Action Cards */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               {actionCards.map((text) => (
                 <button 
                   key={text} 
@@ -104,7 +107,6 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            {/* Chat History */}
             <div className="bg-[#020617] border border-slate-800 rounded-xl p-4 h-[250px] overflow-y-auto mb-4 flex flex-col gap-3">
               {messages.map((m, i) => (
                 <div key={i} className={`p-3 rounded-lg text-sm max-w-[80%] ${m.role === 'user' ? 'bg-blue-600 self-end' : 'bg-[#1e293b] self-start'}`}>
