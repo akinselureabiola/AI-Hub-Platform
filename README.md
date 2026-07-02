@@ -32,6 +32,7 @@ Current progress includes:
 * Documentation and system design
 * Responsive landing page
 * Vercel deployment
+* ATS Resume Assistant API Integration (MVP)
 
 ---
 
@@ -87,7 +88,6 @@ Additional AI modules will be added as the platform evolves.
 
 * OpenAI
 * LangGraph
-* Python
 
 ### Deployment
 
@@ -110,100 +110,3 @@ docs/
 
 README.md
 package.json
-```
-
----
-
-## Documentation
-
-Project documentation is available in the **docs** folder.
-
-Current documentation includes:
-
-* Software Architecture & Technical Design Document (SATDD)
-* High-Level Architecture
-* User Flow Diagram
-
-More technical documentation will be added as development progresses.
-
----
-
-## Development Roadmap
-
-### Phase 1
-
-* Project setup
-* Infrastructure
-* Supabase integration
-* Deployment
-* Documentation
-
-### Phase 2
-
-* User authentication
-* Protected routes
-* Dashboard
-
-### Phase 3
-
-* ATS Resume Assistant integration
-
-### Phase 4
-
-* AI IT Support Copilot integration
-
-### Phase 5
-
-* Software Testing Assistant
-
-### Phase 6
-
-* Analytics
-* User management
-* Platform administration
-
----
-
-## What I'm Learning
-
-This project is helping me gain hands-on experience with:
-
-* Software architecture
-* Authentication
-* Cloud infrastructure
-* API integration
-* AI application development
-* Full-stack development
-* Software documentation
-* Modern Git workflows
-* System design
-
----
-
-## Current Status
-
-The project is actively under development.
-
-New features and improvements are added incrementally as the platform evolves.
-
----
-
-## Author
-
-**Abiola Akinselure**
-
-IT Support Engineer | AI Automation | Systems Administration | Cloud & Infrastructure
-
-GitHub:
-https://github.com/akinselureabiola
-
-LinkedIn:
-https://www.linkedin.com/in/abiola-desmond-akinselure-599134241/
-
----
-
-## Acknowledgements
-
-This project has benefited from technical discussions and architectural guidance from an experienced software engineering mentor. Those conversations have helped me strengthen my understanding of software architecture, cloud infrastructure, and scalable application design.
-
-The implementation, documentation, and ongoing development of the platform continue to be part of my learning journey as I build and expand the project.
