@@ -1,3 +1,32 @@
+<<<<<<< HEAD
+# Virtual Environments
+venv/
+.venv/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Environment Variables
+.env
+
+# Generated Files
+outputs/
+analysis/
+data/
+
+# macOS
+.DS_Store
+
+# Streamlit Secrets
+.streamlit/secrets.toml
+
+# VSCode
+.vscode/
+
+# Python Environment Config
+pyvenv.cfg
+=======
 # Dependencies
 /node_modules
 /.pnp
@@ -32,3 +61,4 @@ pnpm-debug.log*
 .idea/
 .history/
 *.log
+>>>>>>> f860b7020aa86cd16d2c76289c1d904098cd8c17
